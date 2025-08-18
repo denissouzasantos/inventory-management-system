@@ -61,6 +61,18 @@ curl -s localhost:8080/api/query/inventory/global/SKU1 | jq
 ### Observability
 
 - Actuator endpoints enabled; Prometheus metrics available at `/actuator/prometheus`.
+- OpenTelemetry via Micrometer Tracing:
+  - HTTP spans for controllers annotated with `@Observed`
+  - Custom spans for event bus publish/consume with context propagation across the async worker
+  - OTLP HTTP export to `http://localhost:4318/v1/traces` (configurable via `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `management.otlp.tracing.endpoint`)
+
+To see traces locally with an OTLP collector (e.g., `otel-collector` or Grafana Tempo):
+
+```bash
+docker run --rm -p 4318:4318 -e LOG_LEVEL=debug otel/opentelemetry-collector:0.106.0 \
+  --config=
+  'receivers: {otlp: {protocols: {http: {}}}} exporters: {logging: {}} service: {pipelines: {traces: {receivers: [otlp], exporters: [logging]}}}'
+```
 
 ### Fault tolerance (prototype)
 

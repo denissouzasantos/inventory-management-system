@@ -1,4 +1,16 @@
 -------------------------------------------------------------------------------
 Test set: com.example.inventory.InventoryFlowTest
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.417 s -- in com.example.inventory.InventoryFlowTest
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 2.535 s <<< FAILURE! -- in com.example.inventory.InventoryFlowTest
+com.example.inventory.InventoryFlowTest.endToEndFlow -- Time elapsed: 0.876 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 15
+ but was: 0
+	at java.base/jdk.internal.reflect.DirectConstructorHandleAccessor.newInstance(DirectConstructorHandleAccessor.java:62)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:502)
+	at com.example.inventory.InventoryFlowTest.endToEndFlow(InventoryFlowTest.java:37)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+

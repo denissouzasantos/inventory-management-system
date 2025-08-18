@@ -4,6 +4,7 @@ import com.example.inventory.event.StockAdjusted;
 import com.example.inventory.event.StockReplaced;
 import com.example.inventory.model.InventoryRecord;
 import org.springframework.stereotype.Service;
+import io.micrometer.observation.annotation.Observed;
 
 import java.time.Instant;
 import java.util.Map;
@@ -26,6 +27,7 @@ public class StoreInventoryService {
         return storeId + "|" + sku;
     }
 
+    @Observed(name = "inventory.service.replace")
     public InventoryRecord replaceStock(String storeId, String sku, int quantity) {
         Objects.requireNonNull(storeId);
         Objects.requireNonNull(sku);
@@ -38,6 +40,7 @@ public class StoreInventoryService {
         return next;
     }
 
+    @Observed(name = "inventory.service.adjust")
     public InventoryRecord adjustStock(String storeId, String sku, int delta) {
         Objects.requireNonNull(storeId);
         Objects.requireNonNull(sku);

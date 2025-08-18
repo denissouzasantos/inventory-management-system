@@ -1,8 +1,10 @@
+com/example/inventory/service/InMemoryEventBus$Envelope.class
 com/example/inventory/service/InMemoryEventBus.class
 com/example/inventory/service/CentralInventoryProjection.class
 com/example/inventory/api/InventoryCommandController.class
 com/example/inventory/model/InventoryRecord.class
 com/example/inventory/service/StoreInventoryService.class
+com/example/inventory/config/ObservationConfig.class
 com/example/inventory/api/dto/Requests$AdjustStockRequest.class
 com/example/inventory/api/dto/Requests.class
 com/example/inventory/event/InventoryEvent.class
