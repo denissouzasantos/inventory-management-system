@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# Build outputs
+/target
+**/*.class
+**/*.log
+
+# Local tools
+apache-maven-*/
+.mvn/
+.maven.tar.gz
+
+# IDE/editor
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node/k6
+node_modules/
+**/*.tgz

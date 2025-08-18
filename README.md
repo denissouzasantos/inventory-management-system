@@ -58,6 +58,23 @@ sleep 0.2
 curl -s localhost:8080/api/query/inventory/global/SKU1 | jq
 ```
 
+### Docker
+
+Build and run with Docker:
+
+```bash
+docker build -t distributed-inventory:local .
+docker run --rm -p 8080:8080 distributed-inventory:local
+```
+
+Or run with an OpenTelemetry Collector via Compose:
+
+```bash
+docker compose up --build
+```
+
+The app will export traces to the collector at `http://collector:4318/v1/traces` and the collector logs spans to stdout.
+
 ### Observability
 
 - Actuator endpoints enabled; Prometheus metrics available at `/actuator/prometheus`.
