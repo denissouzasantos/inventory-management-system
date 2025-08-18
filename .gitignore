@@ -1,0 +1,42 @@
+# Maven and Java
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+
+# IDEs and editors
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build and runtime
+*.jar
+*.war
+*.ear
+*.class
+
+# Local tooling / downloads
+apache-maven-*/
+.mvn/
+.maven.tar.gz
+
+# Node/k6 optional
+node_modules/
+*.tgz
+
+# Coverage and reports
+surefire-reports/
+failsafe-reports/
+coverage/
+
