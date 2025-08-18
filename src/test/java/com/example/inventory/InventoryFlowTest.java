@@ -31,10 +31,18 @@ class InventoryFlowTest {
         // Adjust stock for store B
         postJson(base + "/api/commands/inventory/adjust", Map.of("storeId", "B", "sku", "SKU1", "delta", 5));
 
-        Thread.sleep(500); // wait for async bus
-
-        Map<?,?> global = rest.getForObject(base + "/api/query/inventory/global/SKU1", Map.class);
-        assertThat(global.get("quantity")).isEqualTo(15);
+        int attempts = 15;
+        Integer qty = null;
+        for (int i = 0; i < attempts; i++) {
+            Map<?,?> g = rest.getForObject(base + "/api/query/inventory/global/SKU1", Map.class);
+            Object val = g.get("quantity");
+            if (val instanceof Number n) {
+                qty = n.intValue();
+                if (qty >= 15) break;
+            }
+            Thread.sleep(200);
+        }
+        assertThat(qty).isEqualTo(15);
 
         Map<?,?> storeA = rest.getForObject(base + "/api/query/inventory/store/A/SKU1", Map.class);
         assertThat(storeA.get("quantity")).isEqualTo(10);

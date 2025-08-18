@@ -94,6 +94,31 @@ Run the integration test:
 mvn -q -DskipTests=false test
 ```
 
+### Load testing (k6)
+
+`scripts/k6-inventory.js` runs a small scenario that mixes write and read traffic.
+
+```bash
+k6 run scripts/k6-inventory.js
+```
+
+### Diagram
+
+```mermaid
+flowchart LR
+    subgraph Store Node
+        C[Command API]
+    end
+    subgraph Central
+        BUS[In-Memory Event Bus]
+        PROJ[Central Projection]
+        Q[Query API]
+    end
+    C -- emits events --> BUS
+    BUS -- async deliver --> PROJ
+    Q -- reads --> PROJ
+```
+
 ### Tech stack
 
 - Java 21, Spring Boot 3.3

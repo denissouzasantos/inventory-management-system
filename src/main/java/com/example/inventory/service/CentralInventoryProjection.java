@@ -28,6 +28,7 @@ public class CentralInventoryProjection {
     @PostConstruct
     public void subscribe() {
         eventBus.subscribe(this::onEvent);
+        eventBus.start();
     }
 
     private void onEvent(InventoryEvent event) {

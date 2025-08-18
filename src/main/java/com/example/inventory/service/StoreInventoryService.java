@@ -20,7 +20,6 @@ public class StoreInventoryService {
 
     public StoreInventoryService(InMemoryEventBus eventBus) {
         this.eventBus = eventBus;
-        this.eventBus.start();
     }
 
     private String key(String storeId, String sku) {
