@@ -28,6 +28,7 @@ public class CentralInventoryProjection {
     @PostConstruct
     public void subscribe() {
         eventBus.subscribe(this::onEvent);
+        // In synchronous mode, start() is a no-op. Kept for compatibility.
         eventBus.start();
     }
 
