@@ -7,12 +7,12 @@ This repository contains a simplified, production-inspired prototype for optimiz
 ### Architecture
 
 - **Store Command Service**: Accepts stock updates from stores and emits domain events (`StockReplaced`, `StockAdjusted`).
-- **In-Memory Event Bus**: A lightweight async queue simulating Kafka/Pulsar. Events are delivered to subscribers in the background thread.
+- **In-Memory Event Bus (sync)**: Delivers events in-process, synchronously, with bounded retries and DLQ em memória.
 - **Central Query Projection**: Subscribes to events and maintains denormalized views for quick queries:
   - Total quantity by SKU across all stores
   - Per-store quantity by SKU
 
-This follows CQRS + Event-Driven principles. Commands are accepted immediately (availability). The central projection converges to the latest state with basic last-write-wins using per-partition versions.
+This follows CQRS + Event-Driven principles. In this variant we prioritize consistency-first: events are delivered synchronously in-process so reads reflect writes imediatamente. The central projection applies last-write-wins per partition (storeId|sku) via versioning.
 
 ### API
 
@@ -28,6 +28,16 @@ POST `/api/commands/inventory/adjust`
 { "storeId": "S1", "sku": "ABC-123", "delta": -3 }
 ```
 
+Optimistic locking (consistency): use `If-Match` com o valor da versão corrente (retornada no ETag das respostas de comando). Exemplo:
+
+```bash
+curl -i -X POST localhost:8080/api/commands/inventory/replace \
+  -H 'Content-Type: application/json' \
+  -H 'If-Match: "2"' \
+  -d '{"storeId":"A","sku":"SKU1","quantity":10}'
+```
+Se a versão divergir, o servidor retorna `412 Precondition Failed` com a versão atual.
+
 Queries
 
 GET `/api/query/inventory/global/{sku}` -> `{ sku, quantity }`
@@ -42,7 +52,7 @@ Prerequisites: Java 21, Maven 3.9+
 mvn spring-boot:run
 ```
 
-Open another terminal to try the flow:
+Open another terminal to try the flow (ETag na resposta indica a nova versão):
 
 ```bash
 curl -s -X POST localhost:8080/api/commands/inventory/replace \
@@ -96,6 +106,10 @@ Notes:
   - Custom spans for event bus publish/consume with context propagation across the async worker
   - OTLP HTTP export to `http://localhost:4318/v1/traces` (configurable via `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `management.otlp.tracing.endpoint`)
 
+Metrics adicionais:
+- `event_bus.publish.failures`
+- `event_bus.consume.failures`
+
 To see traces locally with an OTLP collector (e.g., `otel-collector` or Grafana Tempo):
 
 ```bash
@@ -106,7 +120,8 @@ docker run --rm -p 4318:4318 -e LOG_LEVEL=debug otel/opentelemetry-collector:0.1
 
 ### Fault tolerance (prototype)
 
-- Asynchronous event delivery isolates command latency from projection work.
+- Synchronous delivery with bounded retries (3 tentativas com backoff exponencial por assinante).
+- Dead Letter Queue (em memória) caso não seja possível entregar o evento para um assinante — o comando falha e o estado é revertido.
 - Idempotency and staleness handling via per `storeId|sku` version numbers; stale events are ignored.
 - Last-write-wins per partition for simplicity; can be upgraded to vector clocks or CRDTs.
 
@@ -137,16 +152,43 @@ k6 run scripts/k6-inventory.js
 ```mermaid
 flowchart LR
     subgraph Store Node
-        C[Command API]
+        C["Command API"]
     end
     subgraph Central
-        BUS[In-Memory Event Bus]
-        PROJ[Central Projection]
-        Q[Query API]
+        BUS["In-Memory Event Bus (sync)"]
+        PROJ["Central Projection"]
+        Q["Query API"]
     end
-    C -- emits events --> BUS
-    BUS -- async deliver --> PROJ
-    Q -- reads --> PROJ
+    C -- publish --> BUS
+    BUS -- deliver (inline) --> PROJ
+    Q -- read --> PROJ
+```
+
+### Sequence (consistency-first)
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant CommandAPI as Command API
+    participant EventBus as Event Bus (sync)
+    participant Projection as Central Projection
+    participant QueryAPI as Query API
+
+    Client->>CommandAPI: POST /api/commands/... (If-Match)
+    CommandAPI->>CommandAPI: Validate payload + optimistic lock (ETag)
+    CommandAPI->>EventBus: publish(Event)
+    EventBus->>Projection: handle(Event) retry x3
+    EventBus-->>CommandAPI: success
+    CommandAPI-->>Client: 200 OK (ETag=newVersion)
+
+    Client->>QueryAPI: GET /api/query/...
+    QueryAPI->>Projection: read
+    Projection-->>QueryAPI: state
+    QueryAPI-->>Client: 200 OK
+
+    rect rgba(255,0,0,0.06)
+    Note over EventBus,CommandAPI: On repeated failure -> move to DLQ, rollback state, return 5xx
+    end
 ```
 
 ### Tech stack

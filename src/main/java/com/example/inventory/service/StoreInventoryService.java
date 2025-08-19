@@ -39,6 +39,27 @@ public class StoreInventoryService {
         return next;
     }
 
+    public InventoryRecord replaceStockWithOptimisticLock(String storeId, String sku, int quantity, long expectedVersion) {
+        InventoryRecord before = getStock(storeId, sku).orElse(null);
+        if (expectedVersion >= 0) {
+            long currentVersion = before == null ? 0 : before.getVersion();
+            if (currentVersion != expectedVersion) {
+                throw new OptimisticLockException(currentVersion);
+            }
+        }
+        try {
+            return replaceStock(storeId, sku, quantity);
+        } catch (RuntimeException e) {
+            // rollback memory state to before
+            if (before == null) {
+                storeState.remove(key(storeId, sku));
+            } else {
+                storeState.put(key(storeId, sku), before);
+            }
+            throw e;
+        }
+    }
+
     @Observed(name = "inventory.service.adjust")
     public InventoryRecord adjustStock(String storeId, String sku, int delta) {
         Objects.requireNonNull(storeId);
@@ -51,6 +72,32 @@ public class StoreInventoryService {
         });
         eventBus.publish(new StockAdjusted(storeId, sku, delta, next.getVersion(), next.getUpdatedAt()));
         return next;
+    }
+
+    public InventoryRecord adjustStockWithOptimisticLock(String storeId, String sku, int delta, long expectedVersion) {
+        InventoryRecord before = getStock(storeId, sku).orElse(null);
+        if (expectedVersion >= 0) {
+            long currentVersion = before == null ? 0 : before.getVersion();
+            if (currentVersion != expectedVersion) {
+                throw new OptimisticLockException(currentVersion);
+            }
+        }
+        try {
+            return adjustStock(storeId, sku, delta);
+        } catch (RuntimeException e) {
+            if (before == null) {
+                storeState.remove(key(storeId, sku));
+            } else {
+                storeState.put(key(storeId, sku), before);
+            }
+            throw e;
+        }
+    }
+
+    public static class OptimisticLockException extends RuntimeException {
+        private final long currentVersion;
+        public OptimisticLockException(long currentVersion) { super("Stale ETag"); this.currentVersion = currentVersion; }
+        public long getCurrentVersion() { return currentVersion; }
     }
 
     public Optional<InventoryRecord> getStock(String storeId, String sku) {
