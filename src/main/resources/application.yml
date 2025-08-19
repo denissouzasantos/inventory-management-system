@@ -23,4 +23,7 @@ management:
 spring:
   application:
     name: distributed-inventory
+  threads:
+    virtual:
+      enabled: true
 

@@ -139,6 +139,10 @@ Run the integration test:
 mvn -q -DskipTests=false test
 ```
 
+### Performance
+
+- Virtual threads enabled (`spring.threads.virtual.enabled=true`) to improve scalability for I/O‑bound requests.
+
 ### Load testing (k6)
 
 `scripts/k6-inventory.js` runs a small scenario that mixes write and read traffic.
