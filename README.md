@@ -58,6 +58,36 @@ sleep 0.2
 curl -s localhost:8080/api/query/inventory/global/SKU1 | jq
 ```
 
+### Docker
+
+Build and run with Docker:
+
+```bash
+docker build -t distributed-inventory:local .
+docker run --rm -p 8080:8080 distributed-inventory:local
+```
+
+Or run with an OpenTelemetry Collector via Compose:
+
+```bash
+docker compose up --build
+```
+
+The app will export traces to the collector at `http://collector:4318/v1/traces` and the collector logs spans to stdout.
+
+### Native image (GraalVM)
+
+Build and run a native container:
+
+```bash
+docker build -f Dockerfile.native -t distributed-inventory:native .
+docker run --rm -p 8080:8080 distributed-inventory:native
+```
+
+Notes:
+- Uses `ghcr.io/graalvm/native-image:21` builder and `distroless` runtime.
+- For local native build without Docker: `mvn -Pnative -DskipTests package` then run `target/distributed-inventory`.
+
 ### Observability
 
 - Actuator endpoints enabled; Prometheus metrics available at `/actuator/prometheus`.
